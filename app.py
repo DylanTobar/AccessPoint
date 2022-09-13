@@ -8,6 +8,8 @@ from flask import Flask
 import imutils
 import numpy as np
 
+
+
 app = Flask(__name__)
 dataPath = 'C:/Users/dylan/Desktop/Tesis/facial_recognition/Data' 
 imagePaths = os.listdir(dataPath)
