@@ -1,0 +1,142 @@
+import webbrowser
+from flask import Flask
+from flask import render_template
+from flask import Response
+import cv2
+import os
+from flask import Flask
+import imutils
+import numpy as np
+
+
+app = Flask(__name__)
+dataPath = 'C:/Users/dylan/Desktop/Tesis/facial_recognition/Data' 
+imagePaths = os.listdir(dataPath)
+
+face_recognizer = cv2.face.LBPHFaceRecognizer_create()
+face_recognizer.read('modeloLBPHFace.xml')
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+
+def generate_rec():
+    
+     face_detector = cv2.CascadeClassifier(cv2.data.haarcascades +
+     "haarcascade_frontalface_default.xml")
+     while True:
+          ret, frame = cap.read()
+          if ret:
+               gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+               auxFrame = gray.copy()
+               faces = face_detector.detectMultiScale(gray, 1.3, 5)
+               for (x, y, w, h) in faces:
+                    rostro = auxFrame[y:y+h,x:x+w]
+                    rostro = cv2.resize(rostro,(150,150),interpolation= cv2.INTER_CUBIC)
+                    result = face_recognizer.predict(rostro)
+                    if result[1] < 70:  
+                         cv2.putText(frame,'{}'.format(imagePaths[result[0]]),(x,y-25),2,1.1,(0,255,0),1,cv2.LINE_AA)
+                         cv2.rectangle(frame, (x,y),(x+w,y+h),(0,255,0),2)
+                         os.link ='/visitas'
+                    else:
+                         cv2.putText(frame,'Desconocido',(x,y-20),2,0.8,(0,0,255),1,cv2.LINE_AA)
+                         cv2.rectangle(frame, (x,y),(x+w,y+h),(0,0,255),2)
+               (flag, encodedImage) = cv2.imencode(".jpg", frame)
+               if not flag:
+                    continue
+               yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
+                    bytearray(encodedImage) + b'\r\n')
+
+def generate_reg():
+     personName = 'Kevin'
+     personPath = dataPath + '/' + personName
+     if not os.path.exists(personPath):
+          print('Carpeta creada: ',personPath)
+          os.makedirs(personPath)
+
+     cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+     faceClassif = cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_frontalface_default.xml')
+     count = 0
+     
+     while True:
+
+          ret, frame = cap.read()
+          if ret == False: break
+          frame =  imutils.resize(frame, width=640)
+          gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+          auxFrame = frame.copy()
+
+          faces = faceClassif.detectMultiScale(gray,1.3,5)
+
+          for (x,y,w,h) in faces:
+               cv2.rectangle(frame, (x,y),(x+w,y+h),(0,255,0),2)
+               rostro = auxFrame[y:y+h,x:x+w]
+               rostro = cv2.resize(rostro,(150,150),interpolation=cv2.INTER_CUBIC)
+               cv2.imwrite(personPath + '/rotro_{}.jpg'.format(count),rostro)
+               count = count + 1
+          cv2.imshow('frame',frame)
+
+          k =  cv2.waitKey(1)
+          if k == 27 or count >= 20:  #cantidad de fotos
+               break
+    # cv2.destroyAllWindows()
+
+     peopleList = os.listdir(dataPath)
+     print('Lista de personas: ', peopleList)
+
+     labels = []
+     facesData = []
+     label = 0
+
+     for nameDir in peopleList:
+          personPath = dataPath + '/' + nameDir
+          print('Leyendo las imágenes')
+
+          for fileName in os.listdir(personPath):
+               print('Rostros: ', nameDir + '/' + fileName)
+               labels.append(label)
+               facesData.append(cv2.imread(personPath+'/'+fileName,0))
+          label = label + 1
+
+     face_recognizer = cv2.face.LBPHFaceRecognizer_create()
+
+     print("Entrenando...")
+     face_recognizer.train(facesData, np.array(labels))
+
+     face_recognizer.write('modeloLBPHFace.xml')
+     print("Modelo almacenado...")
+
+
+
+@app.route("/")
+def index():
+     return render_template("index.html")
+
+@app.route("/reg_rostro")
+def registrar_rostro():
+     return render_template("registrar.html")
+
+@app.route("/video_feed")
+def video_feed():
+     return Response(generate_rec(),
+          mimetype = "multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/video_feed2")
+def video_feed2():
+     return Response(generate_reg(),
+          mimetype = "multipart/x-mixed-replace; boundary=frame")
+          
+@app.route("/visitas")
+def visitas():
+     return render_template("visitas.html")
+@app.route("/huellas")
+def huellas():
+     return render_template("huellas.html")
+@app.route("/aceptado")
+def aceptado():
+     return render_template("aceptado.html")
+@app.route("/empleados")
+def empleados():
+     return render_template("empleados.html")
+
+
+if __name__ == "__main__":
+     app.run(debug=True)
+cap.release()
