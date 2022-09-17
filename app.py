@@ -1,13 +1,17 @@
-import webbrowser
-from flask import Flask
-from flask import render_template
-from flask import Response
-import cv2
+import RPi.GPIO as GPIO
+#from mfrc522 import SimpleMFRC522
 import os
-from flask import Flask
+import cv2
 import imutils
 import numpy as np
+import firebase_admin
+from firebase_admin import credentials, storage
+from flask import Flask, Response, render_template
 
+#cred = credentials.Certificate("./key.json")
+#app = firebase_admin.initialize_app(cred, {'storageBucket':'proyectograduacion-435b1.appspot.com'})
+#bucket = storage.bucket()
+#blob= bucket.get_blob ('Data')
 
 app = Flask(__name__)
 dataPath = 'C:/Users/dylan/Desktop/Tesis/facial_recognition/Data' 
@@ -15,7 +19,7 @@ imagePaths = os.listdir(dataPath)
 
 face_recognizer = cv2.face.LBPHFaceRecognizer_create()
 face_recognizer.read('modeloLBPHFace.xml')
-cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 
 def generate_rec():
     
@@ -45,7 +49,7 @@ def generate_rec():
                     bytearray(encodedImage) + b'\r\n')
 
 def generate_reg():
-     personName = 'Kevin'
+     personName = 'juan'
      personPath = dataPath + '/' + personName
      if not os.path.exists(personPath):
           print('Carpeta creada: ',personPath)
@@ -100,7 +104,7 @@ def generate_reg():
      print("Entrenando...")
      face_recognizer.train(facesData, np.array(labels))
 
-     face_recognizer.write('modeloLBPHFace.xml')
+     face_recognizer.write(dataPath + 'modeloLBPHFace.xml')
      print("Modelo almacenado...")
 
 
