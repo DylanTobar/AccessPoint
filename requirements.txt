@@ -86,3 +86,8 @@ virtualenv==20.16.4
 Werkzeug==2.1.2
 wrapt==1.14.1
 zipp==3.8.0
+
+sudo apt-get install libhdf5-dev libhdf5-serial-dev libatlas-base-dev libjasper-dev libqtgui4 libqt4-test
+
+pip3 install opencv-contrib-python==4.1.0.25
+
