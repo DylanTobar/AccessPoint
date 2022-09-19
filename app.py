@@ -1,5 +1,4 @@
-import RPi.GPIO as GPIO
-#from mfrc522 import SimpleMFRC522
+
 import os
 import cv2
 import imutils
@@ -7,7 +6,10 @@ import numpy as np
 import firebase_admin
 from firebase_admin import credentials, storage
 from flask import Flask, Response, render_template
+import RPi.GPIO
+#from mfrc522 import SimpleMFRC522
 
+#prueba de firebase
 #cred = credentials.Certificate("./key.json")
 #app = firebase_admin.initialize_app(cred, {'storageBucket':'proyectograduacion-435b1.appspot.com'})
 #bucket = storage.bucket()
@@ -17,14 +19,19 @@ app = Flask(__name__)
 dataPath = 'C:/Users/dylan/Desktop/Tesis/facial_recognition/Data' 
 imagePaths = os.listdir(dataPath)
 
-face_recognizer = cv2.face.LBPHFaceRecognizer_create()
-face_recognizer.read('modeloLBPHFace.xml')
-cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+
+#def generate_rfid():
+     #reader = SimpleMFRC522()
+     #try:
+     #    id.text = reader.read()
+     #finally:
+     #    GPIO.cleanup()
 
 def generate_rec():
-    
-     face_detector = cv2.CascadeClassifier(cv2.data.haarcascades +
-     "haarcascade_frontalface_default.xml")
+     face_recognizer = cv2.face.LBPHFaceRecognizer_create()
+     face_recognizer.read('modeloLBPHFace.xml')
+     cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)     
+     face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
      while True:
           ret, frame = cap.read()
           if ret:
@@ -38,7 +45,7 @@ def generate_rec():
                     if result[1] < 70:  
                          cv2.putText(frame,'{}'.format(imagePaths[result[0]]),(x,y-25),2,1.1,(0,255,0),1,cv2.LINE_AA)
                          cv2.rectangle(frame, (x,y),(x+w,y+h),(0,255,0),2)
-                         os.link ='/visitas'
+                         
                     else:
                          cv2.putText(frame,'Desconocido',(x,y-20),2,0.8,(0,0,255),1,cv2.LINE_AA)
                          cv2.rectangle(frame, (x,y),(x+w,y+h),(0,0,255),2)
@@ -48,14 +55,15 @@ def generate_rec():
                yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
                     bytearray(encodedImage) + b'\r\n')
 
+          
 def generate_reg():
-     personName = 'juan'
+     personName = 'Dylan'
      personPath = dataPath + '/' + personName
      if not os.path.exists(personPath):
           print('Carpeta creada: ',personPath)
           os.makedirs(personPath)
 
-     cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+     cap = cv2.VideoCapture(1,cv2.CAP_DSHOW)
      faceClassif = cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_frontalface_default.xml')
      count = 0
      
@@ -104,11 +112,12 @@ def generate_reg():
      print("Entrenando...")
      face_recognizer.train(facesData, np.array(labels))
 
-     face_recognizer.write(dataPath + 'modeloLBPHFace.xml')
+     face_recognizer.write('modeloLBPHFace.xml')
      print("Modelo almacenado...")
 
-
-
+#@app.route("/rfid")
+#def rfid():
+#     return Response(generate_rfid())
 @app.route("/")
 def index():
      return render_template("index.html")
@@ -143,4 +152,4 @@ def empleados():
 
 if __name__ == "__main__":
      app.run(debug=True)
-cap.release()
+
