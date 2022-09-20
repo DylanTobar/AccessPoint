@@ -1,12 +1,14 @@
 
 import os
+import re
+import time
 import cv2
 import imutils
 import numpy as np
 import firebase_admin
 from firebase_admin import credentials, storage
 from flask import Flask, Response, render_template
-import RPi.GPIO
+import RPi.GPIO as GPIO
 #from mfrc522 import SimpleMFRC522
 
 #prueba de firebase
@@ -45,7 +47,14 @@ def generate_rec():
                     if result[1] < 70:  
                          cv2.putText(frame,'{}'.format(imagePaths[result[0]]),(x,y-25),2,1.1,(0,255,0),1,cv2.LINE_AA)
                          cv2.rectangle(frame, (x,y),(x+w,y+h),(0,255,0),2)
-                         
+                         relay_pin = [17]
+                         GPIO.setmode(GPIO.BCM)
+                         GPIO.setup(relay_pin, GPIO.OUT)
+                         GPIO.output(relay_pin, 1)
+                         time.sleep(5)
+                         GPIO.output(relay_pin, 0)
+                         exit= True
+
                     else:
                          cv2.putText(frame,'Desconocido',(x,y-20),2,0.8,(0,0,255),1,cv2.LINE_AA)
                          cv2.rectangle(frame, (x,y),(x+w,y+h),(0,0,255),2)
@@ -64,7 +73,7 @@ def generate_reg():
           os.makedirs(personPath)
 
      cap = cv2.VideoCapture(1,cv2.CAP_DSHOW)
-     faceClassif = cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_frontalface_default.xml')
+     faceClassif = cv2.CascadeClassifier(cv2.data.haarscascades+'haarcascade_frontalface_default.xml')
      count = 0
      
      while True:
