@@ -18,8 +18,15 @@ import RPi.GPIO as GPIO
 #blob= bucket.get_blob ('Data')
 
 app = Flask(__name__)
-dataPath = 'C:/Users/dylan/Desktop/Tesis/facial_recognition/Data' 
+#dataPath = 'C:/Users/dylan/Desktop/Tesis/facial_recognition/Data' 
+dataPath = 'Data' 
 imagePaths = os.listdir(dataPath)
+
+RELAY = 17
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(RELAY, GPIO.OUT)
+GPIO.output(RELAY,GPIO.LOW)
 
 
 #def generate_rfid():
@@ -32,8 +39,11 @@ imagePaths = os.listdir(dataPath)
 def generate_rec():
      face_recognizer = cv2.face.LBPHFaceRecognizer_create()
      face_recognizer.read('modeloLBPHFace.xml')
-     cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)     
+     #cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)     
+     cap = cv2.VideoCapture(0)
      face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+     prevTime = 0
+     doorUnlock = False
      while True:
           ret, frame = cap.read()
           if ret:
@@ -47,22 +57,24 @@ def generate_rec():
                     if result[1] < 70:  
                          cv2.putText(frame,'{}'.format(imagePaths[result[0]]),(x,y-25),2,1.1,(0,255,0),1,cv2.LINE_AA)
                          cv2.rectangle(frame, (x,y),(x+w,y+h),(0,255,0),2)
-                         relay_pin = [17]
-                         GPIO.setmode(GPIO.BCM)
-                         GPIO.setup(relay_pin, GPIO.OUT)
-                         GPIO.output(relay_pin, 1)
-                         time.sleep(5)
-                         GPIO.output(relay_pin, 0)
-                         exit= True
+                         GPIO.output(RELAY,GPIO.HIGH)
+                         prevTime = time.time()
+                         doorUnlock = True
+                         print("door unlock")
 
                     else:
                          cv2.putText(frame,'Desconocido',(x,y-20),2,0.8,(0,0,255),1,cv2.LINE_AA)
                          cv2.rectangle(frame, (x,y),(x+w,y+h),(0,0,255),2)
                (flag, encodedImage) = cv2.imencode(".jpg", frame)
+                           
                if not flag:
                     continue
                yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
                     bytearray(encodedImage) + b'\r\n')
+               if doorUnlock == True and time.time() & prevTime > 5:
+                    doorUnlock = False
+                    GPIO.output(RELAY,GPIO.LOW)
+                    print("door lock")   
 
           
 def generate_reg():
@@ -72,7 +84,8 @@ def generate_reg():
           print('Carpeta creada: ',personPath)
           os.makedirs(personPath)
 
-     cap = cv2.VideoCapture(1,cv2.CAP_DSHOW)
+     #cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)     
+     cap = cv2.VideoCapture(0)     
      faceClassif = cv2.CascadeClassifier(cv2.data.haarscascades+'haarcascade_frontalface_default.xml')
      count = 0
      
@@ -100,7 +113,7 @@ def generate_reg():
     # cv2.destroyAllWindows()
 
      peopleList = os.listdir(dataPath)
-     print('Lista de personas: ', peopleList)
+     print('Lista de personas: ' ,peopleList)
 
      labels = []
      facesData = []
