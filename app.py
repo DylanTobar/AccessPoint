@@ -1,14 +1,18 @@
 
+import http
 import os
 import re
 import time
+from tkinter import Button
+from urllib import request
 import cv2
+from grpc import server
 import imutils
 import numpy as np
-import firebase_admin
-from firebase_admin import credentials, storage
+#import firebase_admin
+#from firebase_admin import credentials, storage
 from flask import Flask, Response, render_template
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
 #from mfrc522 import SimpleMFRC522
 
 #prueba de firebase
@@ -18,15 +22,15 @@ import RPi.GPIO as GPIO
 #blob= bucket.get_blob ('Data')
 
 app = Flask(__name__)
-#dataPath = 'C:/Users/dylan/Desktop/Tesis/facial_recognition/Data' 
-dataPath = 'Data' 
+dataPath = 'C:/Users/dylan/Desktop/Tesis/facial_recognition/Data' 
+#dataPath = 'Data' 
 imagePaths = os.listdir(dataPath)
 
-RELAY = 17
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(RELAY, GPIO.OUT)
-GPIO.output(RELAY,GPIO.LOW)
+#RELAY = 17
+#GPIO.setwarnings(False)
+#GPIO.setmode(GPIO.BCM)
+#GPIO.setup(RELAY, GPIO.OUT)
+#GPIO.output(RELAY,GPIO.LOW)
 
 
 #def generate_rfid():
@@ -42,8 +46,8 @@ def generate_rec():
      #cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)     
      cap = cv2.VideoCapture(0)
      face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-     prevTime = 0
-     doorUnlock = False
+     #prevTime = 0
+     #doorUnlock = False
      while True:
           ret, frame = cap.read()
           if ret:
@@ -58,9 +62,9 @@ def generate_rec():
                          cv2.putText(frame,'{}'.format(imagePaths[result[0]]),(x,y-25),2,1.1,(0,255,0),1,cv2.LINE_AA)
                          cv2.rectangle(frame, (x,y),(x+w,y+h),(0,255,0),2)
                          GPIO.output(RELAY,GPIO.HIGH)
-                         prevTime = time.time()
-                         doorUnlock = True
-                         print("door unlock")
+                         #prevTime = time.time()
+                         #doorUnlock = True
+                         #print("door unlock")
 
                     else:
                          cv2.putText(frame,'Desconocido',(x,y-20),2,0.8,(0,0,255),1,cv2.LINE_AA)
@@ -71,14 +75,14 @@ def generate_rec():
                     continue
                yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
                     bytearray(encodedImage) + b'\r\n')
-               if doorUnlock == True and time.time() & prevTime > 5:
-                    doorUnlock = False
-                    GPIO.output(RELAY,GPIO.LOW)
-                    print("door lock")   
+               #if doorUnlock == True and time.time() & prevTime > 5:
+               #     doorUnlock = False
+               #     GPIO.output(RELAY,GPIO.LOW)
+               #     print("door lock")   
 
           
 def generate_reg():
-     personName = 'Dylan'
+     personName = "Dylan"
      personPath = dataPath + '/' + personName
      if not os.path.exists(personPath):
           print('Carpeta creada: ',personPath)
@@ -86,7 +90,7 @@ def generate_reg():
 
      #cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)     
      cap = cv2.VideoCapture(0)     
-     faceClassif = cv2.CascadeClassifier(cv2.data.haarscascades+'haarcascade_frontalface_default.xml')
+     faceClassif = cv2.CascadeClassifier(cv2.data.haarcascades+'haarcascade_frontalface_default.xml')
      count = 0
      
      while True:
@@ -140,6 +144,7 @@ def generate_reg():
 #@app.route("/rfid")
 #def rfid():
 #     return Response(generate_rfid())
+registrar = Button
 @app.route("/")
 def index():
      return render_template("index.html")
